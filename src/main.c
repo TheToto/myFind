@@ -75,25 +75,34 @@ int main(int argc, char *argv[])
     case 'P':
       symlink_flag = 0;
       break;
+    default:
+      errx(1, "cannot do parsing options: unknown %s",argv[i]);
     }
   }
-  /*int start = i;
+  int start = i;
   for (; i < argc; i++)
   {
-    if (argv[i][0] != '-')
-  }*/
-  if (argc == 1)
+    if (argv[i][0] == '-')
+      break;
+  }
+  int end = i;
+  for (; i < argc; i++)
+  {
+    //parsing expr
+  }
+
+  if (start == end)
   {
     listdir(".", flag_d, symlink_flag);
   }
-  for(; i < argc; i++)
+  for(int j = start; j < end; j++)
   {
     struct stat buf;
     int x;
     if (symlink_flag > 0)
-      x = stat (argv[i], &buf);
+      x = stat (argv[j], &buf);
     else
-      x = lstat (argv[i], &buf);
+      x = lstat (argv[j], &buf);
     if (x == -1)
     {
       warn("cannot do lstat");
@@ -106,10 +115,10 @@ int main(int argc, char *argv[])
     else
     {
       if (!flag_d)
-        printf("%s\n", argv[i]);
-      listdir(argv[i], flag_d, symlink_flag);
+        printf("%s\n", argv[j]);
+      listdir(argv[j], flag_d, symlink_flag);
       if (flag_d)
-        printf("%s\n", argv[i]);
+        printf("%s\n", argv[j]);
     }
   }
 }
