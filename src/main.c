@@ -4,37 +4,59 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <err.h>
 #include "my_string.h"
 
-#define MAX_PATH 256
+#define MAX_PATH 4096
 
-void listdir(char *path)
+int listdir(char *path, int flag_d, int symlink_flag)
 {
   struct dirent *dp;
   DIR *dir = opendir(path);
+  if (dir == NULL)
+  {
+    warn("cannot do opendir");
+    return 1;
+  }
   while ((dp=readdir(dir)) != NULL) {
     //printf("debug: %s\n", dp->d_name);
     if (my_strcmp(dp->d_name, ".") && my_strcmp(dp->d_name, ".."))
     {
-      char next_path[MAX_PATH];
       char *file_name = dp->d_name;
-      printf("%s/%s\n",path,file_name);
-      if (dp->d_type == DT_DIR)
+
+      char new_path[MAX_PATH];
+      my_strcpy(path, new_path);
+      my_strcat(new_path, "/");
+      my_strcat(new_path, file_name);
+
+      if (!flag_d)
+        printf("%s\n",new_path);
+      struct stat buf;
+      int x;
+      if (symlink_flag == 1)
+        x = stat (new_path, &buf);
+      else
+        x = lstat (new_path, &buf);
+      if (x == -1)
       {
-        my_strcpy(path, next_path);
-        my_strcat(next_path, "/");
-        my_strcat(next_path, file_name);
-        listdir(next_path);
+        warn("cannot do lstat");
+        continue;
       }
+      if (S_ISDIR(buf.st_mode))
+        listdir(new_path, flag_d, symlink_flag);
+      if (flag_d)
+        printf("%s\n",new_path);
     }
   }
   closedir(dir);
-  return;
+  return 0;
 }
 
 int main(int argc, char *argv[])
 {
   int i = 1;
+  int flag_d = 0;
+  int symlink_flag = 0;
   for(; i < argc; i++)
   {
     if (argv[i][0] != '-')
@@ -42,30 +64,52 @@ int main(int argc, char *argv[])
     switch (argv[i][1])
     {
     case 'd':
+      flag_d = 1;
       break;
     case 'H':
+      symlink_flag = 2;
       break;
     case 'L':
+      symlink_flag = 1;
       break;
     case 'P':
+      symlink_flag = 0;
       break;
     }
   }
+  /*int start = i;
+  for (; i < argc; i++)
+  {
+    if (argv[i][0] != '-')
+  }*/
   if (argc == 1)
   {
-    listdir(".");
+    listdir(".", flag_d, symlink_flag);
   }
   for(; i < argc; i++)
   {
     struct stat buf;
-    int x = lstat (argv[i], &buf);
-    if (S_ISLNK(buf.st_mode))
+    int x;
+    if (symlink_flag > 0)
+      x = stat (argv[i], &buf);
+    else
+      x = lstat (argv[i], &buf);
+    if (x == -1)
+    {
+      warn("cannot do lstat");
+      continue;
+    }
+    if (!S_ISDIR(buf.st_mode))
     {
       printf("%s\n", argv[i]);
     }
     else
     {
-      listdir(argv[i]);
+      if (!flag_d)
+        printf("%s\n", argv[i]);
+      listdir(argv[i], flag_d, symlink_flag);
+      if (flag_d)
+        printf("%s\n", argv[i]);
     }
   }
 }
