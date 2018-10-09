@@ -9,10 +9,14 @@
 #include "my_string.h"
 #include "commands.h"
 
+#define NB_FUNC 2
+
 struct test tests[NB_FUNC] =
 {
-  { "-name", &t_name }
+  { "-name", &t_name },
+  { "-print", &a_print}
 };
+
 
 int handle_elem(struct state *state, struct my_dirent *my_dirent)
 {
@@ -21,7 +25,7 @@ int handle_elem(struct state *state, struct my_dirent *my_dirent)
     if (!state->funcs[i].func(my_dirent, state->funcs[i].arg))
       return 0;
   }
-  printf("%s\n", my_dirent->path);
+ // printf("%s\n", my_dirent->path);
   return 1;
 }
 
@@ -61,14 +65,12 @@ int listdir(char *path, struct state *state)
       struct my_dirent my_dirent = { dp->d_name, new_path, &buf };
 
       if (!state->flag_d)
-        //printf("%s\n",new_path);
         handle_elem(state, &my_dirent);
 
       if (S_ISDIR(buf.st_mode))
         listdir(new_path, state);
 
       if (state->flag_d)
-        //printf("%s\n",new_path);
         handle_elem(state, &my_dirent);
     }
   }
@@ -118,6 +120,8 @@ int main(int argc, char **argv)
     int k = 0;
     for(; k < NB_FUNC; k++)
     {
+      if (my_strcmp("-a", argv[i]) == 0)
+        continue;
       if (my_strcmp(tests[k].name, argv[i]) == 0)
       {
         char *arg = NULL;
@@ -157,17 +161,18 @@ int main(int argc, char **argv)
       warn("cannot do stat");
       continue;
     }
+    struct my_dirent my_dirent = { argv[j], argv[j], &buf };
     if (!S_ISDIR(buf.st_mode))
     {
-      printf("%s\n", argv[i]);
+      printf("%s\n", argv[j]);
     }
     else
     {
       if (!flag_d)
-        printf("%s\n", argv[j]);
+        handle_elem(&state, &my_dirent);
       listdir(argv[j], &state);
       if (flag_d)
-        printf("%s\n", argv[j]);
+        handle_elem(&state, &my_dirent);
     }
   }
 }

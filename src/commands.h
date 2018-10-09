@@ -1,5 +1,4 @@
 #define MAX_PATH 4096
-#define NB_FUNC 1
 
 struct my_dirent
 {
@@ -29,3 +28,4 @@ struct state
 };
 
 int t_name(struct my_dirent *my_dirent, char *test);
+int a_print(struct my_dirent *my_dirent, char *test);
