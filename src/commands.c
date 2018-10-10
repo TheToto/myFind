@@ -16,4 +16,5 @@ int a_print(struct my_dirent *my_dirent, char *test)
   if (test != NULL)
     err(1, "print");
   printf("%s\n", my_dirent->path);
+  return 1;
 }

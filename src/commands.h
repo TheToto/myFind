@@ -21,10 +21,15 @@ struct func
 
 struct state
 {
-  struct func *funcs;
-  int funcs_len;
+  struct expr *expr;
   int flag_d;
   int symlink_flag;
+};
+
+struct expr
+{
+    struct func *func;
+    struct expr **expr;
 };
 
 int t_name(struct my_dirent *my_dirent, char *test);
