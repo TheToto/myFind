@@ -2,28 +2,28 @@
 
 struct my_dirent
 {
-  char *filename;
-  char *path;
-  struct stat *buf;
+    char *filename;
+    char *path;
+    struct stat *buf;
 };
 
 struct test
 {
-  char* name;
-  int (*func) (struct my_dirent*, char*);
+    char* name;
+    int (*func) (struct my_dirent*, char*);
 };
 
 struct func
 {
-  int (*func) (struct my_dirent*, char*);
-  char *arg;
+    int (*func) (struct my_dirent*, char*);
+    char *arg;
 };
 
 struct state
 {
-  struct expr *expr;
-  int flag_d;
-  int symlink_flag;
+    struct expr *expr;
+    int flag_d;
+    int symlink_flag;
 };
 
 struct expr
