@@ -1,15 +1,13 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -std=c99
 
-SRCS=$(wildcard src/*.c)
-OBJS=$(SRCS:.c=.o)
-
+VPATH=src
+OBJS=myfind.o my_string.o commands.o
 BIN=myfind
 
 all: $(BIN)
 
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(BIN)
 
 .PHONY: test
 test: $(BIN)
