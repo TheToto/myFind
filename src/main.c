@@ -13,20 +13,42 @@
 
 struct test tests[NB_FUNC] =
 {
-    { "-name", &t_name },
-    { "-print", &a_print}
+    { "-name", &t_name, 1 },
+    { "-print", &a_print, 0 }
 };
 
+int evaluate_expr(struct expr *expr, struct state *state,
+        struct my_dirent *my_dirent)
+{
+    int argc = state->argc;
+    if (!expr->expr)
+    {
+        return expr->func->func(my_dirent, expr->func->arg);
+    }
+    int line = 0;
+    int col = 0;
+    for (; line < argc; line++)
+    {
+        if (expr->expr[line*argc+col] == NULL)
+            break;
+        for (; col < argc; col++)
+        {
+            if (expr->expr[line*argc+col] == NULL)
+                return 1;
+            int r = evaluate_expr(expr->expr[line*argc+col], state, my_dirent);
+            if (r)
+                continue;
+            else
+                break;
+        }
+    }
+    return 0;
+}
 
 int handle_elem(struct state *state, struct my_dirent *my_dirent)
 {
-    /*for (int i = 0; i < state->funcs_len; i++)
-    {
-        if (!state->funcs[i].func(my_dirent, state->funcs[i].arg))
-            return 0;
-    }*/
-    (void)state;
-    printf("%s\n", my_dirent->path);
+    evaluate_expr(state->expr, state, my_dirent);
+    //printf("%s\n", my_dirent->path);
     return 1;
 }
 
@@ -81,14 +103,17 @@ int listdir(char *path, struct state *state)
 
 struct expr *parse_expr(int *i, char **argv, int argc)
 {
-    fprintf(stderr, "d: Enter un (\n");
+    fprintf(stderr, "d: %d Enter un (\n", *i);
     struct expr *expr = malloc(sizeof(struct expr));
-    expr->expr = calloc(argc * 2, sizeof(struct expr*));
+    // HANDLE MALLOC ERRORS
+    expr->expr = calloc(argc * argc, sizeof(struct expr*));
+    // AGAIN
     expr->func = NULL;
     int line = 0;
     int col = 0;
     for (; *i < argc; (*i)++)
     {
+        fprintf(stderr, "dd: Parse %s at %d\n", argv[*i], *i);
         if (my_strcmp(argv[*i], "(") == 0)
         {
             (*i)++;
@@ -98,8 +123,7 @@ struct expr *parse_expr(int *i, char **argv, int argc)
         }
         if (my_strcmp(argv[*i], ")") == 0)
         {
-            fprintf(stderr, "d: Close )\n");
-            (*i)++;
+            fprintf(stderr, "d: %i Close )\n",*i);
             break;
         }
         if (my_strcmp(argv[*i], "-a") == 0)
@@ -117,18 +141,25 @@ struct expr *parse_expr(int *i, char **argv, int argc)
             if (my_strcmp(tests[k].name, argv[*i]) == 0)
             {
                 char *arg = NULL;
-                if (argv[*i+1] && argv[*i+1][0] != '-'
-                        && argv[*i+1][0] != '('
-                        && argv[*i+1][0] != ')')
+                if (argv[*i+1] && argv[*i+1][0] != '-' &&
+                        argv[*i+1][0] != '(' &&
+                        argv[*i+1][0] != ')')
                 {
                     arg = argv[*i+1];
                     (*i)++;
                 }
+                if (tests[k].hasArg && arg == NULL)
+                {
+                    // FREE ALL EXPR ALREADY ALOCATED !
+                    errx(1, "cannot do parsing %s: no arg", tests[k].name);
+                }
                 struct func *func = malloc(sizeof(struct func));
+                // AGAIN
                 func->func = tests[k].func;
                 func->arg = arg;
                 fprintf(stderr, "d: Add %s with %s\n", tests[k].name, arg);
                 struct expr *new = malloc(sizeof(struct expr));
+                // AGAIN
                 new->expr = NULL;
                 new->func = func;
                 expr->expr[line*argc+col] = new;
@@ -137,17 +168,37 @@ struct expr *parse_expr(int *i, char **argv, int argc)
             }
         }
         if (k >= NB_FUNC)
-            errx(1, "cannot do parsing expr: unknown %s",argv[*i]);
+            errx(1, "cannot do parsing %s: unknown expr",argv[*i]);
     }
     return expr;
 }
 
+void free_expr(struct expr *expr, struct state *state)
+{
+    if (!expr)
+        return;
+    int argc = state->argc;
+    if (!expr->expr)
+    {
+        free(expr->func);
+    }
+    else
+    {
+        for (int i = 0; i < argc * 2; i++)
+            free_expr(expr->expr[i], state);
+        free(expr->expr);
+    }
+    free(expr);
+}
+
 int main(int argc, char **argv)
 {
+    fprintf(stderr,"d: argc: %d\n", argc);
     int i = 1;
     int flag_d = 0;
     int symlink_flag = 0;
-    for(; i < argc; i++)
+    int quit = 0;
+    for(; i < argc && !quit; i++)
     {
         if (argv[i][0] != '-')
             break;
@@ -166,24 +217,30 @@ int main(int argc, char **argv)
             symlink_flag = 0;
             break;
         default:
-            errx(1, "cannot do parsing options: unknown %s",argv[i]);
+            quit = 1;
+            i--;
+            break;
         }
     }
     int start = i;
     for (; i < argc; i++)
     {
-        if (argv[i][0] == '-')
+        if (argv[i][0] == '-' || argv[i][0] == '(' || argv[i][0] == ')')
             break;
     }
     int end = i;
 
     struct expr *expr = parse_expr(&i , argv, argc);
-    struct state state = { expr, flag_d, symlink_flag };
+    struct state state = { expr, flag_d, symlink_flag, argc };
 
     // Launch files
     if (start == end)
     {
+        if (!flag_d)
+           printf(".\n");
         listdir(".", &state);
+        if (flag_d)
+           printf(".\n");;
     }
     for(int j = start; j < end; j++)
     {
@@ -212,4 +269,5 @@ int main(int argc, char **argv)
                 handle_elem(&state, &my_dirent);
         }
     }
+    free_expr(state.expr, &state);
 }

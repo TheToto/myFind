@@ -11,6 +11,7 @@ struct test
 {
     char* name;
     int (*func) (struct my_dirent*, char*);
+    int hasArg;
 };
 
 struct func
@@ -24,6 +25,7 @@ struct state
     struct expr *expr;
     int flag_d;
     int symlink_flag;
+    int argc;
 };
 
 struct expr
@@ -32,5 +34,5 @@ struct expr
     struct expr **expr;
 };
 
-int t_name(struct my_dirent *my_dirent, char *test);
-int a_print(struct my_dirent *my_dirent, char *test);
+int t_name(struct my_dirent *my_dirent, char *arg);
+int a_print(struct my_dirent *my_dirent, char *arg);
