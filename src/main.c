@@ -1,6 +1,7 @@
 #define _DEFAULT_SOURCE
 
 #include <stdio.h>
+#include <fnmatch.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -9,12 +10,14 @@
 #include "my_string.h"
 #include "commands.h"
 
-#define NB_FUNC 2
+#define NB_FUNC 4
 
 struct test tests[NB_FUNC] =
 {
     { "-name", &t_name, 1 },
-    { "-print", &a_print, 0 }
+    { "-print", &a_print, 0 },
+    { "-type", &t_type, 1 },
+    { "-exec", &a_exec, 1 }
 };
 
 int evaluate_expr(struct expr *expr, struct state *state,
@@ -23,7 +26,7 @@ int evaluate_expr(struct expr *expr, struct state *state,
     int argc = state->argc;
     if (!expr->expr)
     {
-        return expr->func->func(my_dirent, expr->func->arg);
+        return expr->func->func(my_dirent, expr->func);
     }
     int line = 0;
     int col = 0;
@@ -140,24 +143,41 @@ struct expr *parse_expr(int *i, char **argv, int argc)
         {
             if (my_strcmp(tests[k].name, argv[*i]) == 0)
             {
-                char *arg = NULL;
-                if (argv[*i+1] && argv[*i+1][0] != '-' &&
-                        argv[*i+1][0] != '(' &&
-                        argv[*i+1][0] != ')')
+                int start_arg = *i+1;
+                if (my_strcmp("-exec", tests[k].name) == 0)
                 {
-                    arg = argv[*i+1];
+                    while (*i+1 < argc && my_strcmp(argv[*i+1], ";") == 1 &&
+                            my_strcmp(argv[*i], "+") == 1)
+                    {
+                        (*i)++;
+                    }
+                    if (*i+1 >= argc)
+                        errx(1, "cannot do parsing exec arg: no end");
                     (*i)++;
                 }
-                if (tests[k].hasArg && arg == NULL)
+                else
+                {
+                    if (argc > *i+1 && argv[*i+1][0] != '-' &&
+                            argv[*i+1][0] != '(' &&
+                            argv[*i+1][0] != ')')
+                    {
+                        (*i)++;
+                    }
+                }
+                int end_arg = *i+1;
+                if ((tests[k].hasArg == 1 && start_arg == end_arg) ||
+                        (tests[k].hasArg == 0 && start_arg != end_arg))
                 {
                     // FREE ALL EXPR ALREADY ALOCATED !
-                    errx(1, "cannot do parsing %s: no arg", tests[k].name);
+                    errx(1, "cannot do parsing %s: unknow arg", tests[k].name);
                 }
                 struct func *func = malloc(sizeof(struct func));
                 // AGAIN
                 func->func = tests[k].func;
-                func->arg = arg;
-                fprintf(stderr, "d: Add %s with %s\n", tests[k].name, arg);
+                func->start = start_arg;
+                func->end = end_arg;
+                func->argv = argv;
+                fprintf(stderr, "d: Add %s with %s\n", tests[k].name, argv[start_arg]);
                 struct expr *new = malloc(sizeof(struct expr));
                 // AGAIN
                 new->expr = NULL;

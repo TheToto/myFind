@@ -7,17 +7,19 @@ struct my_dirent
     struct stat *buf;
 };
 
-struct test
-{
-    char* name;
-    int (*func) (struct my_dirent*, char*);
-    int hasArg;
-};
-
 struct func
 {
-    int (*func) (struct my_dirent*, char*);
-    char *arg;
+    int (*func) (struct my_dirent*, struct func*);
+    int start;
+    int end;
+    char **argv;
+};
+
+struct test
+{
+    char *name;
+    int (*func) (struct my_dirent*, struct func*);
+    int hasArg;
 };
 
 struct state
@@ -34,5 +36,7 @@ struct expr
     struct expr **expr;
 };
 
-int t_name(struct my_dirent *my_dirent, char *arg);
-int a_print(struct my_dirent *my_dirent, char *arg);
+int t_name(struct my_dirent *my_dirent, struct func *func);
+int a_print(struct my_dirent *my_dirent, struct func *func);
+int t_type(struct my_dirent *my_dirent, struct func *func);
+int a_exec(struct my_dirent *my_dirent, struct func *func);
