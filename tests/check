@@ -2,8 +2,6 @@
 
 find $@ > t1
 ./myfind $@ > t2
-cat t2
-echo
-echo DIFF :
-diff t1 t2
+diff -y t1 t2
+echo - DIFF: $?
 rm t1 t2
