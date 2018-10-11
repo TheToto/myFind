@@ -3,6 +3,7 @@
 struct my_dirent
 {
     char *filename;
+    char *dirpath;
     char *path;
     struct stat *buf;
 };
@@ -20,6 +21,7 @@ struct test
     char *name;
     int (*func) (struct my_dirent*, struct func*);
     int hasArg;
+    int isAction;
 };
 
 struct state
@@ -28,6 +30,7 @@ struct state
     int flag_d;
     int symlink_flag;
     int argc;
+    int hasAction;
 };
 
 struct expr
@@ -40,3 +43,4 @@ int t_name(struct my_dirent *my_dirent, struct func *func);
 int a_print(struct my_dirent *my_dirent, struct func *func);
 int t_type(struct my_dirent *my_dirent, struct func *func);
 int a_exec(struct my_dirent *my_dirent, struct func *func);
+int a_execdir(struct my_dirent *my_dirent, struct func *func);

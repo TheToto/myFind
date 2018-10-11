@@ -10,14 +10,15 @@
 #include "my_string.h"
 #include "commands.h"
 
-#define NB_FUNC 4
+#define NB_FUNC 5
 
 struct test tests[NB_FUNC] =
 {
-    { "-name", &t_name, 1 },
-    { "-print", &a_print, 0 },
-    { "-type", &t_type, 1 },
-    { "-exec", &a_exec, 1 }
+    { "-name", &t_name, 1, 0 },
+    { "-print", &a_print, 0, 1 },
+    { "-type", &t_type, 1, 0 },
+    { "-exec", &a_exec, 1, 1 },
+    { "-execdir", &a_execdir, 1, 1 }
 };
 
 int evaluate_expr(struct expr *expr, struct state *state,
@@ -30,6 +31,8 @@ int evaluate_expr(struct expr *expr, struct state *state,
     }
     int line = 0;
     int col = 0;
+    if (expr->expr[0] == NULL)
+        return 1;
     for (; line < argc; line++)
     {
         if (expr->expr[line*argc+col] == NULL)
@@ -50,9 +53,10 @@ int evaluate_expr(struct expr *expr, struct state *state,
 
 int handle_elem(struct state *state, struct my_dirent *my_dirent)
 {
-    evaluate_expr(state->expr, state, my_dirent);
-    //printf("%s\n", my_dirent->path);
-    return 1;
+    int res = evaluate_expr(state->expr, state, my_dirent);
+    if (!state->hasAction && res)
+        printf("%s\n", my_dirent->path);
+    return res;
 }
 
 int listdir(char *path, struct state *state)
@@ -73,7 +77,9 @@ int listdir(char *path, struct state *state)
 
             char new_path[MAX_PATH];
             my_strcpy(path, new_path);
-            my_strcat(new_path, "/");
+            int l = my_strlen(new_path);
+            if (new_path[l-1] != '/')
+                my_strcat(new_path, "/");
             my_strcat(new_path, file_name);
 
             struct stat buf;
@@ -88,7 +94,7 @@ int listdir(char *path, struct state *state)
                 continue;
             }
 
-            struct my_dirent my_dirent = { dp->d_name, new_path, &buf };
+            struct my_dirent my_dirent = { dp->d_name, path, new_path, &buf };
 
             if (!state->flag_d)
                 handle_elem(state, &my_dirent);
@@ -104,9 +110,9 @@ int listdir(char *path, struct state *state)
     return 0;
 }
 
-struct expr *parse_expr(int *i, char **argv, int argc)
+struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
 {
-    fprintf(stderr, "d: %d Enter un (\n", *i);
+    //fprintf(stderr, "d: %d Enter un (\n", *i);
     struct expr *expr = malloc(sizeof(struct expr));
     // HANDLE MALLOC ERRORS
     expr->expr = calloc(argc * argc, sizeof(struct expr*));
@@ -116,17 +122,17 @@ struct expr *parse_expr(int *i, char **argv, int argc)
     int col = 0;
     for (; *i < argc; (*i)++)
     {
-        fprintf(stderr, "dd: Parse %s at %d\n", argv[*i], *i);
+        //fprintf(stderr, "dd: Parse %s at %d\n", argv[*i], *i);
         if (my_strcmp(argv[*i], "(") == 0)
         {
             (*i)++;
-            expr->expr[line*argc+col] = parse_expr(i, argv, argc);
+            expr->expr[line*argc+col] = parse_expr(i, argv, argc, hasAction);
             col++;
             continue;
         }
         if (my_strcmp(argv[*i], ")") == 0)
         {
-            fprintf(stderr, "d: %i Close )\n",*i);
+            //fprintf(stderr, "d: %i Close )\n",*i);
             break;
         }
         if (my_strcmp(argv[*i], "-a") == 0)
@@ -135,7 +141,7 @@ struct expr *parse_expr(int *i, char **argv, int argc)
         {
             line++;
             col = 0;
-            fprintf(stderr, "d: -o : new line %d\n", line);
+            //fprintf(stderr, "d: -o : new line %d\n", line);
             continue;
         }
         int k = 0;
@@ -144,7 +150,8 @@ struct expr *parse_expr(int *i, char **argv, int argc)
             if (my_strcmp(tests[k].name, argv[*i]) == 0)
             {
                 int start_arg = *i+1;
-                if (my_strcmp("-exec", tests[k].name) == 0)
+                if (my_strcmp("-exec", tests[k].name) == 0 ||
+                        my_strcmp("-execdir", tests[k].name) == 0)
                 {
                     while (*i+1 < argc && my_strcmp(argv[*i+1], ";") == 1 &&
                             my_strcmp(argv[*i], "+") == 1)
@@ -173,11 +180,13 @@ struct expr *parse_expr(int *i, char **argv, int argc)
                 }
                 struct func *func = malloc(sizeof(struct func));
                 // AGAIN
+                if (tests[k].isAction)
+                    *hasAction = 1;
                 func->func = tests[k].func;
                 func->start = start_arg;
                 func->end = end_arg;
                 func->argv = argv;
-                fprintf(stderr, "d: Add %s with %s\n", tests[k].name, argv[start_arg]);
+                //fprintf(stderr, "d: Add %s with %s\n", tests[k].name, argv[start_arg]);
                 struct expr *new = malloc(sizeof(struct expr));
                 // AGAIN
                 new->expr = NULL;
@@ -213,7 +222,7 @@ void free_expr(struct expr *expr, struct state *state)
 
 int main(int argc, char **argv)
 {
-    fprintf(stderr,"d: argc: %d\n", argc);
+    //fprintf(stderr,"d: argc: %d\n", argc);
     int i = 1;
     int flag_d = 0;
     int symlink_flag = 0;
@@ -249,18 +258,32 @@ int main(int argc, char **argv)
             break;
     }
     int end = i;
-
-    struct expr *expr = parse_expr(&i , argv, argc);
-    struct state state = { expr, flag_d, symlink_flag, argc };
+    int hasAction = 0;
+    struct expr *expr = parse_expr(&i , argv, argc, &hasAction);
+    struct state state = { expr, flag_d, symlink_flag, argc, hasAction };
 
     // Launch files
     if (start == end)
     {
-        if (!flag_d)
-           printf(".\n");
-        listdir(".", &state);
-        if (flag_d)
-           printf(".\n");;
+        struct stat buf;
+        int x;
+        if (symlink_flag > 0)
+            x = stat (".", &buf);
+        else
+            x = lstat (".", &buf);
+        if (x == -1)
+        {
+            warn("cannot do stat");
+        }
+        else
+        {
+            struct my_dirent my_dirent = { ".", ".", ".", &buf };
+            if (!flag_d)
+                handle_elem(&state, &my_dirent);
+            listdir(".", &state);
+            if (flag_d)
+                handle_elem(&state, &my_dirent);
+        }
     }
     for(int j = start; j < end; j++)
     {
@@ -275,10 +298,13 @@ int main(int argc, char **argv)
             warn("cannot do stat");
             continue;
         }
-        struct my_dirent my_dirent = { argv[j], argv[j], &buf };
+        char res[MAX_PATH] = { 0 };
+        char res2[MAX_PATH] = { 0 };
+        struct my_dirent my_dirent = { my_filename(argv[j], res2),
+            my_dirname(argv[j], res), argv[j], &buf };
         if (!S_ISDIR(buf.st_mode))
         {
-            printf("%s\n", argv[j]);
+            handle_elem(&state, &my_dirent);
         }
         else
         {
