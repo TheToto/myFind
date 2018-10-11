@@ -50,6 +50,7 @@ int a_print(struct my_dirent *my_dirent, struct func *func)
 
 int a_exec(struct my_dirent *my_dirent, struct func *func)
 {
-    printf("j'exec %s %s\n", func->argv[func->start], func->argv[func->end-1]);
+    printf("j'exec %s %s %s\n", my_dirent->path, 
+            func->argv[func->start], func->argv[func->end-1]);
     return 0;
 }
