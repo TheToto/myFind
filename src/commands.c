@@ -25,12 +25,14 @@ int t_type(struct my_dirent *my_dirent, struct func *func)
     char *arg = func->argv[func->start];
     switch (arg[0])
     {
+    case 'f':
+        return S_ISREG(my_dirent->buf->st_mode);
     case 'b':
         return S_ISBLK(my_dirent->buf->st_mode);
     case 'c':
         return S_ISCHR(my_dirent->buf->st_mode);
     case 'd':
-        return S_ISLNK(my_dirent->buf->st_mode);
+        return S_ISDIR(my_dirent->buf->st_mode);
     case 'p':
         return S_ISFIFO(my_dirent->buf->st_mode);
     case 's':

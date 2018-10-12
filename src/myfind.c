@@ -26,11 +26,10 @@ int evaluate_expr(struct expr *expr, struct state *state,
 {
     int argc = state->argc;
     if (!expr->expr)
-    {
         return expr->func->func(my_dirent, expr->func);
-    }
     int line = 0;
     int col = 0;
+    int not_next = 0;
     if (expr->expr[0] == NULL)
         return 1;
     for (; line < argc; line++)
@@ -41,9 +40,18 @@ int evaluate_expr(struct expr *expr, struct state *state,
         {
             if (expr->expr[line*argc+col] == NULL)
                 return 1;
-            int r = evaluate_expr(expr->expr[line*argc+col], state, my_dirent);
-            if (r)
+            if (expr->expr[line*argc+col]->func &&
+                    expr->expr[line*argc+col]->func->start == -1)
+            {
+                not_next = 1;
                 continue;
+            }
+            int r = evaluate_expr(expr->expr[line*argc+col], state, my_dirent);
+            if ((r && !not_next) || (!r && not_next))
+            {
+                not_next = 0;
+                continue;
+            }
             else
                 break;
         }
@@ -112,7 +120,7 @@ int listdir(char *path, struct state *state)
 
 struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
 {
-    //fprintf(stderr, "d: %d Enter un (\n", *i);
+    fprintf(stderr, "d: %d Enter un (\n", *i);
     struct expr *expr = malloc(sizeof(struct expr));
     // HANDLE MALLOC ERRORS
     expr->expr = calloc(argc * argc, sizeof(struct expr*));
@@ -122,7 +130,7 @@ struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
     int col = 0;
     for (; *i < argc; (*i)++)
     {
-        //fprintf(stderr, "dd: Parse %s at %d\n", argv[*i], *i);
+        fprintf(stderr, "dd: Parse %s at %d\n", argv[*i], *i);
         if (my_strcmp(argv[*i], "(") == 0)
         {
             (*i)++;
@@ -132,7 +140,7 @@ struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
         }
         if (my_strcmp(argv[*i], ")") == 0)
         {
-            //fprintf(stderr, "d: %i Close )\n",*i);
+            fprintf(stderr, "d: %i Close )\n",*i);
             break;
         }
         if (my_strcmp(argv[*i], "-a") == 0)
@@ -141,7 +149,22 @@ struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
         {
             line++;
             col = 0;
-            //fprintf(stderr, "d: -o : new line %d\n", line);
+            fprintf(stderr, "d: -o : new line %d\n", line);
+            continue;
+        }
+        if (my_strcmp(argv[*i], "!") == 0)
+        {
+            struct func *func = malloc(sizeof(struct func));
+            // AGAIN
+            func->start = -1;
+            fprintf(stderr, "d: Add ! with -1\n");
+            struct expr *new = malloc(sizeof(struct expr));
+            // AGAIN
+            new->expr = NULL;
+            new->func = func;
+            expr->expr[line*argc+col] = new;
+
+            col++;
             continue;
         }
         int k = 0;
@@ -186,7 +209,7 @@ struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
                 func->start = start_arg;
                 func->end = end_arg;
                 func->argv = argv;
-                //fprintf(stderr, "d: Add %s with %s\n", tests[k].name, argv[start_arg]);
+                fprintf(stderr, "d: Add %s with %s\n", tests[k].name, argv[start_arg]);
                 struct expr *new = malloc(sizeof(struct expr));
                 // AGAIN
                 new->expr = NULL;
