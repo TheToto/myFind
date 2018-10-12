@@ -10,7 +10,7 @@
 #include "my_string.h"
 #include "commands.h"
 
-#define NB_FUNC 5
+#define NB_FUNC 10
 
 struct test tests[NB_FUNC] =
 {
@@ -18,7 +18,12 @@ struct test tests[NB_FUNC] =
     { "-print", &a_print, 0, 1 },
     { "-type", &t_type, 1, 0 },
     { "-exec", &a_exec, 1, 1 },
-    { "-execdir", &a_execdir, 1, 1 }
+    { "-execdir", &a_execdir, 1, 1 },
+    { "-delete", &a_delete, 0, 1 },
+    { "-perm", &t_perm, 1, 0 },
+    { "-user", &t_user, 1, 0 },
+    { "-group", &t_group, 1, 0 },
+    { "-newer", &t_newer, 1, 0 }
 };
 
 int evaluate_expr(struct expr *expr, struct state *state,
@@ -107,7 +112,11 @@ int listdir(char *path, struct state *state)
             if (!state->flag_d)
                 handle_elem(state, &my_dirent);
 
-            if (S_ISDIR(buf.st_mode))
+            if (state->symlink_flag == 1)
+                x = stat (new_path, &buf);
+            else
+                x = lstat (new_path, &buf);
+            if (x != -1 && S_ISDIR(buf.st_mode))
                 listdir(new_path, state);
 
             if (state->flag_d)
@@ -187,16 +196,13 @@ struct expr *parse_expr(int *i, char **argv, int argc, int *hasAction)
                 }
                 else
                 {
-                    if (argc > *i+1 && argv[*i+1][0] != '-' &&
-                            argv[*i+1][0] != '(' &&
-                            argv[*i+1][0] != ')')
+                    if (tests[k].hasArg)
                     {
                         (*i)++;
                     }
                 }
                 int end_arg = *i+1;
-                if ((tests[k].hasArg == 1 && start_arg == end_arg) ||
-                        (tests[k].hasArg == 0 && start_arg != end_arg))
+                if (*i >= argc)
                 {
                     // FREE ALL EXPR ALREADY ALOCATED !
                     errx(1, "cannot do parsing %s: unknow arg", tests[k].name);

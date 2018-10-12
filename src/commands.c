@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
 #include "my_string.h"
 #include "commands.h"
 
@@ -97,4 +99,84 @@ int a_execdir(struct my_dirent *my_dirent, struct func *func)
     if (status == -1)
         err(1, "cannot do execdir");
     return res;
+}
+
+static int remove_directory(const char *path)
+{
+    fprintf(stderr, "m:%s\n", path);
+    DIR *d = opendir(path);
+    if (!d)
+        err(1,"%s", path);
+    size_t path_len = my_strlen(path);
+    int r = -1;
+    if (d != NULL)
+    {
+        struct dirent *p;
+        r = 0;
+        while (r != -1 && (p=readdir(d)))
+        {
+            int r2 = -1;
+            if (!my_strcmp(p->d_name, ".") || !my_strcmp(p->d_name, ".."))
+                continue;
+            size_t len = path_len + my_strlen(p->d_name) + 2; 
+            char *buf = calloc(len, sizeof(char));
+            if (buf != NULL)
+            {
+                struct stat statbuf;
+                my_strcat(buf, path);
+                my_strcat(buf, "/");
+                my_strcat(buf, p->d_name);
+                if (!lstat(buf, &statbuf))
+                {
+                    if (S_ISDIR(statbuf.st_mode))
+                        r2 = remove_directory(buf);
+                    else
+                        r2 = unlink(buf);
+                }
+                if (r2 == -1)
+                    err(1,"o:%s\n", buf);
+                free(buf);
+            }
+            r = r2;
+        }
+        closedir(d);
+    }
+    if (r != -1)
+        r = rmdir(path);
+    return r;
+}
+
+int a_delete(struct my_dirent *my_dirent, struct func *func)
+{
+    if (func->start != func->end)
+        errx (1, "cannot do parsing -print: no arg needed");
+    int res;
+    struct stat buf;
+    lstat(my_dirent->path, &buf);
+    if (S_ISDIR(buf.st_mode))
+        res = remove_directory(my_dirent->path);
+    else
+        res = unlink(my_dirent->path);
+    if (res == -1)
+        err(1, "cannot do delete");
+    return 1;
+}
+
+int t_perm(struct my_dirent *my_dirent, struct func *func)
+{
+    return 1;
+}
+
+int t_user(struct my_dirent *my_dirent, struct func *func)
+{
+    return 1;
+}
+
+int t_group(struct my_dirent *my_dirent, struct func *func)
+{
+    return 1;
+}
+int t_newer(struct my_dirent *my_dirent, struct func *func)
+{
+    return 1;
 }

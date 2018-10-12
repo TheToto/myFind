@@ -44,3 +44,8 @@ int a_print(struct my_dirent *my_dirent, struct func *func);
 int t_type(struct my_dirent *my_dirent, struct func *func);
 int a_exec(struct my_dirent *my_dirent, struct func *func);
 int a_execdir(struct my_dirent *my_dirent, struct func *func);
+int a_delete(struct my_dirent *my_dirent, struct func *func);
+int t_perm(struct my_dirent *my_dirent, struct func *func);
+int t_user(struct my_dirent *my_dirent, struct func *func);
+int t_group(struct my_dirent *my_dirent, struct func *func);
+int t_newer(struct my_dirent *my_dirent, struct func *func);
