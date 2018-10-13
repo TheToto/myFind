@@ -53,14 +53,14 @@ void free_expr(struct expr *expr, struct state *state)
     free(expr);
 }
 
-void parse_flag(int *i, struct state *state, int argc, char **argv)
+int parse_flag(int i, struct state *state, int argc, char **argv)
 {
     int quit = 0;
-    for(; *i < argc && !quit; i++)
+    for(; i < argc && !quit; i++)
     {
-        if (argv[*i][0] != '-')
+        if (argv[i][0] != '-')
             break;
-        switch (argv[*i][1])
+        switch (argv[i][1])
         {
         case 'd':
             state->flag_d = 1;
@@ -76,10 +76,11 @@ void parse_flag(int *i, struct state *state, int argc, char **argv)
             break;
         default:
             quit = 1;
-            (*i)--;
+            i--;
             break;
         }
     }
+    return i;
 }
 
 struct expr *parse_expr(int *i, char **argv, int argc, struct state *state)

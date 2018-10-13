@@ -160,11 +160,12 @@ int main(int argc, char **argv)
 {
     int i = 1;
     struct state state = { NULL, 0, 0, argc, 0 };
-    parse_flag(&i, &state, argc, argv);
+    i = parse_flag(i, &state, argc, argv);
     int start = i;
     for (; i < argc; i++)
     {
-        if (argv[i][0] == '-' || argv[i][0] == '(' || argv[i][0] == ')')
+        if (argv[i][0] == '-' || argv[i][0] == '('
+            || argv[i][0] == ')' || argv[i][0] == '!')
             break;
     }
     int end = i;

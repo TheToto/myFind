@@ -99,8 +99,12 @@ int t_newer(struct my_dirent *my_dirent, struct func *func)
 {
     char *arg = func->argv[func->start];
     struct stat buf;
-    int res = make_stat(&buf, func->state, arg);
-    if (res == -1)
+    int x;
+    if (func->state->symlink_flag > 0)
+        x = stat (arg, &buf);
+    else
+        x = lstat (arg, &buf);
+    if (x == -1)
         err(1, "cannot do -newer");
     time_t newer = buf.st_mtime;
     if (newer < my_dirent->buf->st_mtime)
