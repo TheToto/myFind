@@ -1,7 +1,7 @@
 #ifndef COMMANDS_H
-# define COMMANDS_H
+#define COMMANDS_H
 
-# define MAX_PATH 4096
+#define MAX_PATH 4096
 
 struct my_dirent
 {

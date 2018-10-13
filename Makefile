@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -std=c99
 
 VPATH=src
-OBJS=myfind.o my_string.o commands.o
+OBJS=myfind.o libstring.o expr_action.o libgen.o expr_test.o expr_test_advanced.o parsing.o
 BIN=myfind
 
 all: $(BIN)
