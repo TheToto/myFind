@@ -164,6 +164,59 @@ int a_delete(struct my_dirent *my_dirent, struct func *func)
 
 int t_perm(struct my_dirent *my_dirent, struct func *func)
 {
+    char *arg = func->argv[func->start];
+    if (arg[0] < '0' || arg[0] > '9')
+        arg++;
+    unsigned int rusr = ((arg[0] -'0') & 4) ? 1 : 0;
+    unsigned int wusr = ((arg[0] -'0') & 2) ? 1 : 0;
+    unsigned int xusr = ((arg[0] -'0') & 1) ? 1 : 0;
+    unsigned int rgrp = ((arg[1] -'0') & 4) ? 1 : 0;
+    unsigned int wgrp = ((arg[1] -'0') & 2) ? 1 : 0;
+    unsigned int xgrp = ((arg[1] -'0') & 1) ? 1 : 0;
+    unsigned int roth = ((arg[2] -'0') & 4) ? 1 : 0;
+    unsigned int woth = ((arg[2] -'0') & 2) ? 1 : 0;
+    unsigned int xoth = ((arg[2] -'0') & 1) ? 1 : 0;
+    unsigned int frusr = (my_dirent->buf->st_mode & S_IRUSR) ? 1 : 0;
+    unsigned int fwusr = (my_dirent->buf->st_mode & S_IWUSR) ? 1 : 0;
+    unsigned int fxusr = (my_dirent->buf->st_mode & S_IXUSR) ? 1 : 0;
+    unsigned int frgrp = (my_dirent->buf->st_mode & S_IRGRP) ? 1 : 0;
+    unsigned int fwgrp = (my_dirent->buf->st_mode & S_IWGRP) ? 1 : 0;
+    unsigned int fxgrp = (my_dirent->buf->st_mode & S_IXGRP) ? 1 : 0;
+    unsigned int froth = (my_dirent->buf->st_mode & S_IROTH) ? 1 : 0;
+    unsigned int fwoth = (my_dirent->buf->st_mode & S_IWOTH) ? 1 : 0;
+    unsigned int fxoth = (my_dirent->buf->st_mode & S_IXOTH) ? 1 : 0;
+
+    if (fnmatch("???", func->argv[func->start], 0) == 0)
+    {
+        if ((frusr == rusr) && (fwusr == wusr) && (fxusr == xusr) &&
+            (frgrp == rgrp) && (fwgrp == wgrp) && (fxgrp == xgrp) &&
+            (froth == roth) && (fwoth == woth) && (fxoth == xoth))
+            return 1;
+        else
+            return 0;
+    }
+    else if (fnmatch("-???", func->argv[func->start], 0) == 0)
+    {
+        if ((frusr || !rusr) && (fwusr || !wusr) && (fxusr || !xusr) &&
+            (frgrp || !rgrp) && (fwgrp || !wgrp) && (fxgrp || !xgrp) &&
+            (froth || !roth) && (fwoth || !woth) && (fxoth || !xoth))
+            return 1;
+        else
+            return 0;
+    }
+    else if (fnmatch("/???", func->argv[func->start], 0) == 0)
+    {
+        if ((frusr && rusr) || (fwusr && wusr) || (fxusr && xusr) ||
+            (frgrp && rgrp) || (fwgrp && wgrp) || (fxgrp && xgrp) ||
+            (froth && roth) || (fwoth && woth) || (fxoth && xoth))
+            return 1;
+        else
+            return 0;
+    }
+    else
+    {
+        errx(1, "cannot do parsing perm: incorrect string");
+    }
     return 1;
 }
 
