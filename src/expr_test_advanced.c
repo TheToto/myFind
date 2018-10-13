@@ -63,10 +63,8 @@ int t_perm(struct my_dirent *my_dirent, struct func *func)
     char *arg = func->argv[func->start];
     if (arg[0] < '0' || arg[0] > '9')
         arg++;
-
     struct my_perm f = create_perm_file(my_dirent->buf);
     struct my_perm s = create_perm_string(arg);
-
     if (fnmatch("???", func->argv[func->start], 0) == 0)
     {
         if ((f.rusr == s.rusr) && (f.wusr == s.wusr) && (f.xusr == s.xusr)
@@ -77,8 +75,10 @@ int t_perm(struct my_dirent *my_dirent, struct func *func)
     else if (fnmatch("-???", func->argv[func->start], 0) == 0)
     {
         if ((f.rusr || !s.rusr) && (f.wusr || !s.wusr) && (f.xusr || !s.xusr)
-            && (f.rgrp || !s.rgrp) && (f.wgrp || !s.wgrp) && (f.xgrp || !s.xgrp)
-            && (f.roth || !s.roth) && (f.woth || !s.woth) && (f.xoth || !s.xoth))
+            && (f.rgrp || !s.rgrp) && (f.wgrp || !s.wgrp)
+            && (f.xgrp || !s.xgrp)
+            && (f.roth || !s.roth) && (f.woth || !s.woth)
+            && (f.xoth || !s.xoth))
             return 1;
     }
     else if (fnmatch("/???", func->argv[func->start], 0) == 0)
