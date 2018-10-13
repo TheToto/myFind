@@ -1,4 +1,4 @@
-- gerer les leaks de malloc lors des erreurs
+OK (news) - gerer les leaks de malloc lors des erreurs
 - gerer les parametres symlink dans les commandes (newer et delete)
-- split les fichiers + améliorer coding style
+OK - split les fichiers + améliorer coding style
 OK - exec +, groupname, group 
