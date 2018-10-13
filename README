@@ -1,0 +1,60 @@
+NAME
+       myfind - search for files in a directory hierarchy
+
+SYNOPSIS
+        ./myfind [options] [files] [expression]
+
+OPTIONS
+        -d: myfind process each directory’s content before the directory itself.
+        -H: myfind does not follow symbolic links, except if it is given in
+            the command line. 
+        -L: myfind follows symbolic links.
+        -P: myfind never follows symbolic links. This is the default behavior.
+
+TEST EXPRESSION
+        -name:      takes a parameter and returns true if the current filename
+                    matches the parameter. It handle globbing.
+        -type:      takes a parameter and returns true if the type of the current
+                    file matches the parameter. Parameter can be :
+                        — b: special files in block mode
+                        — c: special files in character mode
+                        — d: directories
+                        — f : regular files
+                        — l: symbolic links
+                        — p: named pipes (FIFO)
+                        — s: sockets
+        -perm       takes a mode in octal as parameter and returns true if the
+                    current file’s permission bits match exactly the mode. 
+        -perm -:    takes a mode in octal as parameter and returns true if all
+                    the permission bits in mode are set for the file. 
+        -perm /:    takes a mode in octal as parameter and return true if any
+                    of the current file’s permission bits is set in mode.
+        -user:      takes a username and returns true if the file is owned by
+                    the user username. 
+        -group:     takes a groupname and returns true if the file belongs to
+                    the group groupname.
+        -newer:     takes a file as parameter and returns true if the
+                    currently-examined file has a last modificat date more
+                    recent than the file given as argument.
+
+ACTION EXPRESION
+        -print:     prints the path of the currently examined file.
+                    It always returns true.
+        -exec:      takes a command and finishes with a ‘;’ or '+'.
+                    Every {} string encountered in the command will be replaced
+                    with the current filename. It returns true if the command
+                    returned 0, false otherwise.
+        -execdir:   has the same behavior as -exec, but it executes the command
+                    in the current file’s director The current filename does
+                    not take the full path.
+        -delete:    deletes files and return true if succeded.
+
+OPERATOR
+        -o:     placed between two expressions, if the first is true, the
+                second will not be executed.
+        -a:     placed between two expressions, if the first is false, the
+                second will not be executed.
+        ( :     you can open and close parentesis. It's like an unique
+                expression.
+        ! :     placed before an expresssion, it return true if the expression
+                is true, false otherwise.
