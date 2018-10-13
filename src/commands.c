@@ -251,7 +251,7 @@ int t_newer(struct my_dirent *my_dirent, struct func *func)
     if (res == -1)
         err(1, "cannot do -newer");
     time_t newer = buf.st_mtime;
-    if (newer <  my_dirent->buf->st_mtime)
+    if (newer < my_dirent->buf->st_mtime)
         return 1;
     return 0;
 }
