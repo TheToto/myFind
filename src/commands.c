@@ -4,6 +4,8 @@
 #include <err.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <grp.h>
+#include <pwd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -222,14 +224,34 @@ int t_perm(struct my_dirent *my_dirent, struct func *func)
 
 int t_user(struct my_dirent *my_dirent, struct func *func)
 {
-    return 1;
+    char *arg = func->argv[func->start];
+    struct passwd *pw = getpwnam(arg);
+    if (!pw)
+        return 0;
+    if (pw->pw_uid == my_dirent->buf->st_uid)
+        return 1;
+    return 0;
 }
 
 int t_group(struct my_dirent *my_dirent, struct func *func)
 {
-    return 1;
+    char *arg = func->argv[func->start];
+    struct group *gr = getgrnam(arg);
+    if (!gr)
+        return 0;
+    if (gr->gr_gid == my_dirent->buf->st_gid)
+        return 1;
+    return 0;
 }
 int t_newer(struct my_dirent *my_dirent, struct func *func)
 {
-    return 1;
+    char *arg = func->argv[func->start];
+    struct stat buf;
+    int res = lstat(arg, &buf);
+    if (res == -1)
+        err(1, "cannot do -newer");
+    time_t newer = buf.st_mtime;
+    if (newer <  my_dirent->buf->st_mtime)
+        return 1;
+    return 0;
 }

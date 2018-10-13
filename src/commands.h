@@ -1,4 +1,7 @@
-#define MAX_PATH 4096
+#ifndef COMMANDS_H
+# define COMMANDS_H
+
+# define MAX_PATH 4096
 
 struct my_dirent
 {
@@ -49,3 +52,5 @@ int t_perm(struct my_dirent *my_dirent, struct func *func);
 int t_user(struct my_dirent *my_dirent, struct func *func);
 int t_group(struct my_dirent *my_dirent, struct func *func);
 int t_newer(struct my_dirent *my_dirent, struct func *func);
+
+#endif /* !COMMANDS_H */
