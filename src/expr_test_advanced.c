@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include "my_string.h"
 #include "commands.h"
+#include "parsing.h"
 
 struct my_perm
 {
@@ -98,7 +99,7 @@ int t_newer(struct my_dirent *my_dirent, struct func *func)
 {
     char *arg = func->argv[func->start];
     struct stat buf;
-    int res = lstat(arg, &buf);
+    int res = make_stat(&buf, func->state, arg);
     if (res == -1)
         err(1, "cannot do -newer");
     time_t newer = buf.st_mtime;

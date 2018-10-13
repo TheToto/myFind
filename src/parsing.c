@@ -25,6 +25,34 @@ struct test tests[NB_FUNC] =
     { "-newer", &t_newer, 1, 0 }
 };
 
+int make_stat(struct stat *buf, struct state *state, char *arg)
+{
+    int x;
+    if (state->symlink_flag == 1)
+        x = stat (arg, buf);
+    else
+        x = lstat (arg, buf);
+    return x;
+}
+
+void free_expr(struct expr *expr, struct state *state)
+{
+    if (!expr)
+        return;
+    int argc = state->argc;
+    if (!expr->expr)
+    {
+        free(expr->func);
+    }
+    else
+    {
+        for (int i = 0; i < argc * 2; i++)
+            free_expr(expr->expr[i], state);
+        free(expr->expr);
+    }
+    free(expr);
+}
+
 void parse_flag(int *i, struct state *state, int argc, char **argv)
 {
     int quit = 0;
@@ -149,6 +177,7 @@ struct expr *parse_expr(int *i, char **argv, int argc, struct state *state)
                 func->start = start_arg;
                 func->end = end_arg;
                 func->argv = argv;
+                func->state = state;
                 struct expr *new = malloc(sizeof(struct expr));
                 if (!new)
                     err(1, "cannot do malloc");

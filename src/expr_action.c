@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include "my_string.h"
 #include "commands.h"
+#include "parsing.h"
 
 int a_print(struct my_dirent *my_dirent, struct func *func)
 {
@@ -70,7 +71,7 @@ int a_execdir(struct my_dirent *my_dirent, struct func *func)
     return res;
 }
 
-static int remove_directory(const char *path)
+static int remove_directory(const char *path, struct state *state)
 {
     DIR *d = opendir(path);
     int r = -1;
@@ -88,10 +89,10 @@ static int remove_directory(const char *path)
             my_strcat(buf, path);
             my_strcat(buf, "/");
             my_strcat(buf, p->d_name);
-            if (!lstat(buf, &statbuf))
+            if (!make_stat(&statbuf, state, buf))
             {
                 if (S_ISDIR(statbuf.st_mode))
-                    r2 = remove_directory(buf);
+                    r2 = remove_directory(buf, state);
                 else
                     r2 = unlink(buf);
             }
@@ -108,11 +109,12 @@ int a_delete(struct my_dirent *my_dirent, struct func *func)
 {
     if (func->start != func->end)
         errx (1, "cannot do parsing -print: no arg needed");
-    int res;
     struct stat buf;
-    lstat(my_dirent->path, &buf);
+    int res = make_stat(&buf, func->state, my_dirent->path);
+    if (res == -1)
+      err(1, "cannot do delete");
     if (S_ISDIR(buf.st_mode))
-        res = remove_directory(my_dirent->path);
+        res = remove_directory(my_dirent->path, func->state);
     else
         res = unlink(my_dirent->path);
     if (res == -1)

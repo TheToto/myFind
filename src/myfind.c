@@ -11,16 +11,6 @@
 #include "commands.h"
 #include "parsing.h"
 
-static int make_stat(struct stat *buf, struct state *state, char *arg)
-{
-    int x;
-    if (state->symlink_flag == 1)
-        x = stat (arg, buf);
-    else
-        x = lstat (arg, buf);
-    return x;
-}
-
 static int evaluate_expr(struct expr *expr, struct state *state,
         struct my_dirent *my_dirent)
 {
@@ -109,24 +99,6 @@ static void listdir(char *path, struct state *state)
         }
     }
     closedir(dir);
-}
-
-void free_expr(struct expr *expr, struct state *state)
-{
-    if (!expr)
-        return;
-    int argc = state->argc;
-    if (!expr->expr)
-    {
-        free(expr->func);
-    }
-    else
-    {
-        for (int i = 0; i < argc * 2; i++)
-            free_expr(expr->expr[i], state);
-        free(expr->expr);
-    }
-    free(expr);
 }
 
 static void launch_args(struct state *state, int start, int end, char **argv)

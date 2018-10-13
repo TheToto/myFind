@@ -17,6 +17,7 @@ struct func
     int start;
     int end;
     char **argv;
+    struct state *state;
 };
 
 struct test
