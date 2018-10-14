@@ -11,7 +11,7 @@ $(BIN): $(OBJS)
 
 .PHONY: test
 test: $(BIN)
-	tests/test.sh ./$(BIN)
+	tests/test_suite ./$(BIN)
 
 clean:
 	$(RM) $(OBJS) $(BIN)
