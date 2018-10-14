@@ -1,7 +1,21 @@
 #!/bin/sh
 
+echo -e "./myfind $@"
 find $@ > t1
 ./myfind $@ > t2
-diff -y t1 t2
-echo - DIFF: $?
+res=$?
+diff --suppress-common-lines -y t1 t2
+res_diff=$?
+if [ $res -eq 0 ];then
+    echo -e "- Return value: \033[32m0\033[0m"
+else
+    echo -e "- Return value: \033[31m$res\033[0m"
+fi
+if [ $res_diff -eq 0 ];then
+    echo -e "- DIFF: \033[31mOK\033[0m"
+else
+    echo -e "- DIFF: \033[31mFAIL\033[0m"
+fi
 rm t1 t2
+echo
+exit 0

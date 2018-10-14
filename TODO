@@ -2,3 +2,5 @@ OK (news) - gerer les leaks de malloc lors des erreurs
 OK - gerer les parametres symlink dans les commandes (newer et delete)
 OK - split les fichiers + améliorer coding style
 OK - exec +, groupname, group 
+- refactoring main parsing function
+- test suite

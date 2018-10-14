@@ -1,0 +1,14 @@
+#!/bin/bash
+
+tests/check tests/test -name foo
+tests/check tests/test tests/test/src
+tests/check -L tests/test -name \?\?\?
+tests/check tests/test -exec echo -- {} -- \;
+tests/check tests/test \( -type d -o -type f \) -a -name \?
+tests/check tests/test -execdir pwd \; -execdir echo -- {} -- \;
+tests/check \! -name bar
+tests/check tests/test \! \( -name bar -o -name baz \) -print
+tests/check tests/test -perm 664
+tests/check tests/test \! -user toto
+tests/check tests/test -newer README
+tests/check tests/test 
